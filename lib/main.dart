@@ -27,17 +27,26 @@ class _WaneesAppState extends State<WaneesApp> {
       HomeScreen(onStartChat: () => setState(() => selectedIndex = 1)),
       const ChatScreen(),
       const SubscriptionScreen(),
-      SettingsScreen(isDark: isDark, onThemeChanged: (value) => setState(() => isDark = value)),
+      SettingsScreen(
+        isDark: isDark,
+        onThemeChanged: (value) => setState(() => isDark = value),
+      ),
       const ProfileScreen(),
       const LoginScreen(),
     ];
     return MaterialApp(
-      title: 'ونيس', debugShowCheckedModeBanner: false,
-      theme: AppTheme.light, darkTheme: AppTheme.dark,
+      title: 'ونيس',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
       themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
       home: Directionality(
         textDirection: TextDirection.rtl,
-        child: AppShell(selectedIndex: selectedIndex, onIndexChanged: (index) => setState(() => selectedIndex = index), child: pages[selectedIndex]),
+        child: AppShell(
+          selectedIndex: selectedIndex,
+          onIndexChanged: (index) => setState(() => selectedIndex = index),
+          child: pages[selectedIndex],
+        ),
       ),
     );
   }

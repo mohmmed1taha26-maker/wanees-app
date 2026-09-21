@@ -12,6 +12,9 @@ void main() {
     await tester.tap(find.text('ابدأ محادثة جديدة'));
     await tester.pumpAndSettle();
 
-    expect(find.text('أهلاً بك! أنا ونيس، كيف أستطيع مساعدتك اليوم؟'), findsOneWidget);
+    expect(
+      find.text('أهلاً بك! أنا ونيس، كيف أستطيع مساعدتك اليوم؟'),
+      findsOneWidget,
+    );
   });
 }
