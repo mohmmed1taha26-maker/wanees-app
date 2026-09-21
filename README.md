@@ -1,31 +1,26 @@
-# ونيس - Wanees App
+# ونيس
 
-تطبيق Flutter بسيط وجميل للدردشة العربية، مع دعم Gemini API بدون حفظ مفتاح API داخل الكود.
-
-## التشغيل
-
-ثبت الحزم:
-
-```bash
-flutter pub get
-```
+تطبيق محادثة عربي RTL مبني بـ Flutter، ومهيأ للويب أولاً مع قابلية البناء لاحقاً لـ Android وiOS.
 
 ## التشغيل على Codespaces
 
-شغل التطبيق على منفذ `8080` مع تمرير مفتاح Gemini وقت التشغيل:
-
 ```bash
-flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080 --dart-define=GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+flutter pub get
+flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080
 ```
 
-يمكن تغيير موديل Gemini عند الحاجة:
+لتفعيل Gemini، مرّر المفتاح من خارج الكود:
 
 ```bash
-flutter run \
-  --dart-define=GEMINI_API_KEY=YOUR_GEMINI_API_KEY \
-  --dart-define=GEMINI_MODEL=gemini-1.5-flash
+flutter run -d chrome --dart-define=GEMINI_API_KEY=YOUR_KEY
+flutter build web --dart-define=GEMINI_API_KEY=YOUR_KEY
 ```
 
-## ملاحظة مهمة
+عند عدم تمرير المفتاح يعمل التطبيق بردود محلية تجريبية. لا تضع المفتاح في ملفات المشروع أو في Git.
 
-لا تضع مفتاح Gemini الحقيقي داخل `lib/main.dart` أو داخل GitHub. استخدم دائمًا `--dart-define` أو إعدادات سرية في نظام البناء.
+## تنظيم المشروع
+
+- `lib/screens`: الصفحات والتنقل.
+- `lib/widgets`: المكونات المشتركة.
+- `lib/theme`: الألوان والخطوط والثيمات.
+- `lib/services`: التكامل مع Gemini.

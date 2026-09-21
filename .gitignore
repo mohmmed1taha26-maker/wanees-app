@@ -1,19 +1,14 @@
-# Dart / Flutter
+# Flutter/Dart
 .dart_tool/
-.packages
 .pub/
 build/
+coverage/
 pubspec.lock
-
-# IDEs
+*.log
+*.class
+*.iml
 .idea/
 .vscode/
-*.iml
-
-# OS
 .DS_Store
-Thumbs.db
-
-# Secrets
 .env
 *.env
