@@ -10,10 +10,12 @@
 flutter pub get
 ```
 
-شغل التطبيق مع تمرير مفتاح Gemini وقت التشغيل:
+## التشغيل على Codespaces
+
+شغل التطبيق على منفذ `8080` مع تمرير مفتاح Gemini وقت التشغيل:
 
 ```bash
-flutter run --dart-define=GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080 --dart-define=GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 ```
 
 يمكن تغيير موديل Gemini عند الحاجة:
