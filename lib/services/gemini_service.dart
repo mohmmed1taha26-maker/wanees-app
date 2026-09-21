@@ -1,66 +1,82 @@
 import 'dart:convert';
-
 import 'package:http/http.dart' as http;
 
-class ChatMessage {
-  const ChatMessage({required this.text, required this.isUser});
-  final String text;
-  final bool isUser;
-}
-
+/// خدمة الاتصال بـ Gemini API لتطبيق ونيس
+/// تعتمد حصريًا على متغير البيئة --dart-define=GEMINI_API_KEY
 class GeminiService {
-  static const apiKey = String.fromEnvironment('GEMINI_API_KEY');
-  static const model = String.fromEnvironment(
-    'GEMINI_MODEL',
-    defaultValue: 'gemini-1.5-flash',
-  );
-  static const localResponses = {
-    'السلام عليكم': 'وعليكم السلام ورحمة الله وبركاته، مرحباً بك!',
-    'مرحبا': 'مرحباً بك! يسعدني التحدث معك.',
-    'كيف حالك': 'أنا بخير والحمد لله! كيف حالك أنت؟',
-    'كيفك': 'بخير ونعمة، أتمنى أن تكون بأفضل حال.',
-    'من انت': 'أنا ونيس، رفيقك الذكي للمحادثة.',
-    'وش تقدر تسوي': 'أقدر أجاوبك، أقترح أفكاراً، وأساعدك في الأسئلة اليومية.',
-  };
+  // قراءة المفتاح بأمان تام من البيئة بدون تضمينه في الكود
+  static const String apiKey = String.fromEnvironment('GEMINI_API_KEY');
 
-  Future<String> ask(String prompt) async {
-    if (apiKey.isEmpty) return _localReply(prompt);
-    final url = Uri.parse(
-      'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey',
-    );
+  // التحقق من وجود المفتاح
+  static bool get hasApiKey => apiKey.isNotEmpty;
+
+  // رابط استدعاء Gemini API
+  static const String _endpoint =
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+
+  // التعليمات التوجيهية لهوية وشخصية "ونيس"
+  static const String _systemInstruction = '''
+أنت "ونيس"؛ رفيق ونديم ذكي ومساعد محادثة عربي ودود ولبق، يتميز بالدفء وخفة الظل والمصداقية.
+- تحدث باللغة العربية دائماً (لهجة بيضاء لطيفة أو فصحى ميسرة وقريبة للقلب).
+- أجوبتك موجزة، واضحة، تشع إيجابية ومحبة، وتساعد السائل بروح الصديق المخلص.
+- تجنب التعقيد والإطالة غير الضرورية، وتفاعل باهتمام ومودة مع المستخدم.
+''';
+
+  /// إرسال رسالة المستخدم إلى Gemini والحصول على الرد
+  static Future<String> generateReply(String userMessage) async {
+    // في حال عدم توفر المفتاح
+    if (!hasApiKey) {
+      return 'أهلاً بك! مفتاح Gemini غير متوفر حالياً، أستطيع التفاعل معك عبر الردود المحلية الترحيبية والأسئلة الشائعة.';
+    }
+
+    final url = Uri.parse('$_endpoint?key=$apiKey');
+
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'contents': [
-            {
-              'parts': [
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json; charset=UTF-8'},
+            body: jsonEncode({
+              'systemInstruction': {
+                'parts': [
+                  {'text': _systemInstruction}
+                ]
+              },
+              'contents': [
                 {
-                  'text':
-                      'أنت ونيس، مساعد عربي لطيف. أجب بالعربية باختصار ووضوح.\n\n$prompt',
-                },
+                  'parts': [
+                    {'text': userMessage}
+                  ]
+                }
               ],
-            },
-          ],
-        }),
-      );
-      if (response.statusCode != 200) return _localReply(prompt);
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      return data['candidates']?[0]?['content']?['parts']?[0]?['text']
-              ?.toString()
-              .trim() ??
-          _localReply(prompt);
-    } catch (_) {
-      return _localReply(prompt);
-    }
-  }
+              'generationConfig': {
+                'temperature': 0.7,
+                'maxOutputTokens': 800,
+              }
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
-  String _localReply(String prompt) {
-    final normalized = prompt.trim().replaceAll(RegExp(r'[؟?!,.،]'), '');
-    for (final entry in localResponses.entries) {
-      if (normalized.contains(entry.key)) return entry.value;
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+        final candidates = decoded['candidates'] as List?;
+        if (candidates != null && candidates.isNotEmpty) {
+          final content = candidates.first['content'];
+          final parts = content?['parts'] as List?;
+          if (parts != null && parts.isNotEmpty) {
+            final text = parts.first['text'] as String?;
+            if (text != null && text.trim().isNotEmpty) {
+              return text.trim();
+            }
+          }
+        }
+        return 'تعذر الاتصال بـ Gemini، حاول مرة أخرى لاحقًا.';
+      } else {
+        return 'تعذر الاتصال بـ Gemini، حاول مرة أخرى لاحقًا.';
+      }
+    } catch (_) {
+      // الالتزام التام بالنص المحدد في الشروط عند الفشل
+      return 'تعذر الاتصال بـ Gemini، حاول مرة أخرى لاحقًا.';
     }
-    return 'يسعدني أن أسمع منك. وضّح لي سؤالك أكثر وسأحاول مساعدتك.';
   }
 }

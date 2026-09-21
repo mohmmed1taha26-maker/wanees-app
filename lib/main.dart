@@ -1,53 +1,51 @@
 import 'package:flutter/material.dart';
-
-import 'screens/app_shell.dart';
-import 'screens/chat_screen.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
+import 'screens/chat_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/subscription_screen.dart';
-import 'theme/app_theme.dart';
 
-void main() => runApp(const WaneesApp());
-
-class WaneesApp extends StatefulWidget {
-  const WaneesApp({super.key});
-  @override
-  State<WaneesApp> createState() => _WaneesAppState();
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const WaneesApp());
 }
 
-class _WaneesAppState extends State<WaneesApp> {
-  bool isDark = false;
-  int selectedIndex = 0;
+/// التطبيق الرئيسي "ونيس"
+class WaneesApp extends StatelessWidget {
+  const WaneesApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      HomeScreen(onStartChat: () => setState(() => selectedIndex = 1)),
-      const ChatScreen(),
-      const SubscriptionScreen(),
-      SettingsScreen(
-        isDark: isDark,
-        onThemeChanged: (value) => setState(() => isDark = value),
-      ),
-      const ProfileScreen(),
-      const LoginScreen(),
-    ];
     return MaterialApp(
-      title: 'ونيس',
+      title: 'ونيس - رفيقك الذكي للمحادثة',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
-      home: Directionality(
-        textDirection: TextDirection.rtl,
-        child: AppShell(
-          selectedIndex: selectedIndex,
-          onIndexChanged: (index) => setState(() => selectedIndex = index),
-          child: pages[selectedIndex],
-        ),
-      ),
+      theme: AppTheme.lightTheme,
+
+      // الدعم الكامل للغة العربية واتجاه RTL
+      locale: const Locale('ar', 'SA'),
+      supportedLocales: const [
+        Locale('ar', 'SA'),
+        Locale('ar', ''),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+
+      // جدول المسارات
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const HomeScreen(),
+        '/chat': (context) => const ChatScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/profile': (context) => const ProfileScreen(),
+        '/settings': (context) => const SettingsScreen(),
+        '/subscription': (context) => const SubscriptionScreen(),
+      },
     );
   }
 }
