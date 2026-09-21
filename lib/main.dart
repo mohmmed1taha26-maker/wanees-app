@@ -67,6 +67,7 @@ class _ChatPageState extends State<ChatPage> {
   ];
 
   bool _isSending = false;
+  bool get _hasGeminiApiKey => _geminiApiKey.trim().isNotEmpty;
 
   @override
   void dispose() {
@@ -86,7 +87,13 @@ class _ChatPageState extends State<ChatPage> {
     });
     _scrollToBottom();
 
-    if (_geminiApiKey.isEmpty) {
+    final localReply = LocalReplyService.tryReply(text);
+    if (localReply != null) {
+      _addAssistantMessage(localReply);
+      return;
+    }
+
+    if (!_hasGeminiApiKey) {
       _addAssistantMessage(
         'لم يتم ضبط مفتاح Gemini API. شغل التطبيق بهذا الشكل:\n'
         'flutter run --dart-define=GEMINI_API_KEY=YOUR_KEY',
@@ -98,9 +105,11 @@ class _ChatPageState extends State<ChatPage> {
       final reply = await _gemini.sendMessage(_messages.skip(1).toList());
       _addAssistantMessage(reply);
     } on GeminiException catch (error) {
-      _addAssistantMessage(error.message);
+      _addAssistantMessage('تعذر الاتصال بـ Gemini. ${error.message}');
     } catch (_) {
-      _addAssistantMessage('حدث خطأ غير متوقع. حاول مرة ثانية بعد قليل.');
+      _addAssistantMessage(
+        'تعذر الاتصال بـ Gemini. تحقق من الاتصال أو مفتاح API.',
+      );
     }
   }
 
@@ -132,7 +141,7 @@ class _ChatPageState extends State<ChatPage> {
         child: Column(
           children: [
             const _Header(),
-            if (_geminiApiKey.isEmpty) const _ApiKeyNotice(),
+            if (!_hasGeminiApiKey) const _ApiKeyNotice(),
             Expanded(
               child: ListView.builder(
                 controller: _scrollController,
@@ -384,6 +393,34 @@ class ChatMessage {
   final bool isUser;
 }
 
+class LocalReplyService {
+  const LocalReplyService._();
+
+  static String? tryReply(String input) {
+    final text = input.trim().toLowerCase();
+
+    if (text.isEmpty) return null;
+
+    if (_matchesAny(text, ['السلام عليكم', 'سلام عليكم'])) {
+      return 'وعليكم السلام ورحمة الله وبركاته. حياك الله، كيف أقدر أساعدك؟';
+    }
+
+    if (_matchesAny(text, ['مرحبا', 'هلا', 'اهلا', 'أهلا'])) {
+      return 'أهلًا وسهلًا. اكتب طلبك وأنا معك.';
+    }
+
+    if (_matchesAny(text, ['من انت', 'من أنت', 'وش انت', 'ما هو ونيس'])) {
+      return 'أنا ونيس، مساعد دردشة عربي يساعدك في الأفكار والكتابة والأسئلة اليومية.';
+    }
+
+    return null;
+  }
+
+  static bool _matchesAny(String text, List<String> patterns) {
+    return patterns.any((pattern) => text == pattern.toLowerCase());
+  }
+}
+
 class GeminiService {
   const GeminiService({required this.apiKey, required this.model});
 
@@ -428,15 +465,18 @@ class GeminiService {
             },
           }),
         )
-        .timeout(const Duration(seconds: 45));
+        .timeout(
+          const Duration(seconds: 45),
+          onTimeout: () => throw const GeminiException('انتهت مهلة الطلب.'),
+        );
 
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final body = _decodeJsonObject(response.body);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final error = body['error'] as Map<String, dynamic>?;
       throw GeminiException(
         error?['message'] as String? ??
-            'تعذر الاتصال بخدمة Gemini. تحقق من المفتاح أو الاتصال.',
+            'تحقق من مفتاح API أو اسم الموديل أو الاتصال.',
       );
     }
 
@@ -457,6 +497,17 @@ class GeminiService {
     }
 
     return text;
+  }
+
+  Map<String, dynamic> _decodeJsonObject(String source) {
+    try {
+      final decoded = jsonDecode(source);
+      if (decoded is Map<String, dynamic>) return decoded;
+    } catch (_) {
+      throw const GeminiException('وصل رد غير مفهوم من الخدمة.');
+    }
+
+    throw const GeminiException('وصل رد غير مفهوم من الخدمة.');
   }
 }
 
