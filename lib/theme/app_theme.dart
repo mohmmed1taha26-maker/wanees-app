@@ -29,7 +29,7 @@ class AppTheme {
         titleTextStyle: AppTextStyles.heading3,
         iconTheme: IconThemeData(color: AppColors.textPrimary),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -90,3 +90,4 @@ class AppTheme {
     );
   }
 }
+
